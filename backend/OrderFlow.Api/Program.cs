@@ -4,6 +4,7 @@ using OrderFlow.Application;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+builder.Services.AddSingleton<IOrderRepository, InMemoryOrderRepository>();
 builder.Services.AddSingleton<OrderService>();
 
 var app = builder.Build();

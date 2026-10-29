@@ -8,7 +8,8 @@ public class OrderServiceTests
     public void GetAll_ReturnsThreeSeededOrders()
     {
         // Arrange
-        var service = new OrderService();
+        var repository = new InMemoryOrderRepository();
+        var service = new OrderService(repository);
 
         // Act
         var orders = service.GetAll();
@@ -27,7 +28,8 @@ public class OrderServiceTests
     public void GetById_WithExistingId_ReturnsMatchingOrder()
     {
         // Arrange
-        var service = new OrderService();
+        var repository = new InMemoryOrderRepository();
+        var service = new OrderService(repository);
 
         // Act
         var order = service.GetById(1);
@@ -43,7 +45,8 @@ public class OrderServiceTests
     public void GetById_WithUnknownId_ReturnsNull()
     {
         // Arrange
-        var service = new OrderService();
+        var repository = new InMemoryOrderRepository();
+        var service = new OrderService(repository);
 
         // Act
         var order = service.GetById(999);
@@ -56,7 +59,8 @@ public class OrderServiceTests
     public void Create_WithValidRequest_ReturnsNewOrder()
     {
         // Arrange
-        var service = new OrderService();
+        var repository = new InMemoryOrderRepository();
+        var service = new OrderService(repository);
         var request = new CreateOrderRequest("  Contoso  ", 199.99m);
 
         // Act
@@ -78,7 +82,8 @@ public class OrderServiceTests
         string customerName)
     {
         // Arrange
-        var service = new OrderService();
+        var repository = new InMemoryOrderRepository();
+        var service = new OrderService(repository);
         var request = new CreateOrderRequest(customerName, 100m);
 
         // Act
@@ -94,7 +99,8 @@ public class OrderServiceTests
     public void Create_WithNegativeTotal_RejectsRequest()
     {
         // Arrange
-        var service = new OrderService();
+        var repository = new InMemoryOrderRepository();
+        var service = new OrderService(repository);
         var request = new CreateOrderRequest("Contoso", -1m);
 
         // Act
@@ -104,5 +110,58 @@ public class OrderServiceTests
         Assert.Null(order);
         Assert.Equal("Order total cannot be negative.", error);
         Assert.Equal(3, service.GetAll().Count);
+    }
+
+    [Fact]
+    public void Create_WithBlankCustomerName_DoesNotCallRepository()
+    {
+        // Arrange
+        var repository = new FakeOrderRepository();
+        var service = new OrderService(repository);
+        var request = new CreateOrderRequest(" ", 100m);
+
+        // Act
+        var order = service.Create(request, out var error);
+
+        // Assert
+        Assert.Null(order);
+        Assert.Equal("Customer name is required.", error);
+        Assert.Equal(0, repository.AddCallCount);
+    }
+
+    [Fact]
+    public void Create_WithNegativeTotal_DoesNotCallRepository()
+    {
+        // Arrange
+        var repository = new FakeOrderRepository();
+        var service = new OrderService(repository);
+        var request = new CreateOrderRequest("Contoso", -1m);
+
+        // Act
+        var order = service.Create(request, out var error);
+
+        // Assert
+        Assert.Null(order);
+        Assert.Equal("Order total cannot be negative.", error);
+        Assert.Equal(0, repository.AddCallCount);
+    }
+
+    [Fact]
+    public void Create_WithValidRequest_PassesTrimmedValuesToRepository()
+    {
+        // Arrange
+        var repository = new FakeOrderRepository();
+        var service = new OrderService(repository);
+        var request = new CreateOrderRequest("  Contoso  ", 199.99m);
+
+        // Act
+        var order = service.Create(request, out var error);
+
+        // Assert
+        Assert.NotNull(order);
+        Assert.Null(error);
+        Assert.Equal(1, repository.AddCallCount);
+        Assert.Equal("Contoso", repository.LastCustomerName);
+        Assert.Equal(199.99m, repository.LastTotal);
     }
 }
