@@ -2,6 +2,7 @@
   <Folder Name="/backend/">
     <Project Path="backend/OrderFlow.Api.Tests/OrderFlow.Api.Tests.csproj" />
     <Project Path="backend/OrderFlow.Api/OrderFlow.Api.csproj" />
+    <Project Path="backend/OrderFlow.Application.Tests/OrderFlow.Application.Tests.csproj" />
     <Project Path="backend/OrderFlow.Application/OrderFlow.Application.csproj" />
   </Folder>
 </Solution>
