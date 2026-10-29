@@ -1,4 +1,3 @@
-
 namespace OrderFlow.Application;
 
 public record Order(

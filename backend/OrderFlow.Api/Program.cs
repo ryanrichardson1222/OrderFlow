@@ -1,5 +1,6 @@
 
 using OrderFlow.Application;
+using OrderFlow.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 

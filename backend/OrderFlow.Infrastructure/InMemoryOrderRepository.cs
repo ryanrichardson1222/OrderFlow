@@ -1,4 +1,6 @@
-namespace OrderFlow.Application;
+using OrderFlow.Application;
+
+namespace OrderFlow.Infrastructure;
 
 public class InMemoryOrderRepository : IOrderRepository
 {

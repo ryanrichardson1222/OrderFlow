@@ -8,7 +8,7 @@ public class OrderServiceTests
     public void GetAll_ReturnsThreeSeededOrders()
     {
         // Arrange
-        var repository = new InMemoryOrderRepository();
+        var repository = new FakeOrderRepository();
         var service = new OrderService(repository);
 
         // Act
@@ -28,7 +28,7 @@ public class OrderServiceTests
     public void GetById_WithExistingId_ReturnsMatchingOrder()
     {
         // Arrange
-        var repository = new InMemoryOrderRepository();
+        var repository = new FakeOrderRepository();
         var service = new OrderService(repository);
 
         // Act
@@ -45,7 +45,7 @@ public class OrderServiceTests
     public void GetById_WithUnknownId_ReturnsNull()
     {
         // Arrange
-        var repository = new InMemoryOrderRepository();
+        var repository = new FakeOrderRepository();
         var service = new OrderService(repository);
 
         // Act
@@ -59,7 +59,7 @@ public class OrderServiceTests
     public void Create_WithValidRequest_ReturnsNewOrder()
     {
         // Arrange
-        var repository = new InMemoryOrderRepository();
+        var repository = new FakeOrderRepository();
         var service = new OrderService(repository);
         var request = new CreateOrderRequest("  Contoso  ", 199.99m);
 
@@ -82,7 +82,7 @@ public class OrderServiceTests
         string customerName)
     {
         // Arrange
-        var repository = new InMemoryOrderRepository();
+        var repository = new FakeOrderRepository();
         var service = new OrderService(repository);
         var request = new CreateOrderRequest(customerName, 100m);
 
@@ -99,7 +99,7 @@ public class OrderServiceTests
     public void Create_WithNegativeTotal_RejectsRequest()
     {
         // Arrange
-        var repository = new InMemoryOrderRepository();
+        var repository = new FakeOrderRepository();
         var service = new OrderService(repository);
         var request = new CreateOrderRequest("Contoso", -1m);
 
