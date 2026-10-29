@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.Hosting;
 
 namespace OrderFlow.Api.Tests;
 
@@ -11,7 +12,12 @@ public class OrderApiTests : IClassFixture<WebApplicationFactory<Program>>
 
     public OrderApiTests(WebApplicationFactory<Program> factory)
     {
-        _client = factory.CreateClient();
+        var configuredFactory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("https_port", "5001");
+        });
+
+        _client = configuredFactory.CreateClient();
     }
 
     [Fact]
