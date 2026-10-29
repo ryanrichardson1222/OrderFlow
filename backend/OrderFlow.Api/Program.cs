@@ -1,7 +1,10 @@
 
+using OrderFlow.Application;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+builder.Services.AddSingleton<OrderService>();
 
 var app = builder.Build();
 
@@ -12,66 +15,28 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Temporary in-memory order data.
-// This data will reset whenever the application restarts.
-var orders = new List<Order>
+app.MapGet("/api/orders", (OrderService service) =>
 {
-    new Order(1, "Acme Corporation", "Processing", 249.99m),
-    new Order(2, "Northstar Logistics", "Shipped", 1249.50m),
-    new Order(3, "Summit Healthcare", "Pending", 89.95m)
-};
-
-// GET /api/orders
-// Returns all orders as JSON.
-app.MapGet("/api/orders", () =>
-{
-    return Results.Ok(orders);
+    return Results.Ok(service.GetAll());
 })
 .WithName("GetOrders");
 
-// POST /api/orders
-// Validates the request and creates a new order.
-app.MapPost("/api/orders", (CreateOrderRequest request) =>
+app.MapPost("/api/orders", (CreateOrderRequest request, OrderService service) =>
 {
-    if (string.IsNullOrWhiteSpace(request.CustomerName))
+    var order = service.Create(request, out var error);
+
+    if (order is null)
     {
-        return Results.BadRequest(new
-        {
-            error = "Customer name is required."
-        });
+        return Results.BadRequest(new { error });
     }
 
-    if (request.Total < 0)
-    {
-        return Results.BadRequest(new
-        {
-            error = "Order total cannot be negative."
-        });
-    }
-
-    var nextId = orders.Max(order => order.Id) + 1;
-
-    var newOrder = new Order(
-        nextId,
-        request.CustomerName.Trim(),
-        "Pending",
-        request.Total
-    );
-
-    orders.Add(newOrder);
-
-    return Results.Created(
-        $"/api/orders/{newOrder.Id}",
-        newOrder
-    );
+    return Results.Created($"/api/orders/{order.Id}", order);
 })
 .WithName("CreateOrder");
 
-// GET /api/orders/{id}
-// Returns one order by ID, or 404 if it doesn't exist.
-app.MapGet("/api/orders/{id:int}", (int id) =>
+app.MapGet("/api/orders/{id:int}", (int id, OrderService service) =>
 {
-    var order = orders.FirstOrDefault(order => order.Id == id);
+    var order = service.GetById(id);
 
     if (order is null)
     {
@@ -84,5 +49,4 @@ app.MapGet("/api/orders/{id:int}", (int id) =>
 
 app.Run();
 
-record Order(int Id, string CustomerName, string Status, decimal Total);
-record CreateOrderRequest(string CustomerName, decimal Total);
+public partial class Program { }
