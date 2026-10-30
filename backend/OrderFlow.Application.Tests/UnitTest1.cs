@@ -5,14 +5,14 @@ namespace OrderFlow.Application.Tests;
 public class OrderServiceTests
 {
     [Fact]
-    public void GetAll_ReturnsThreeSeededOrders()
+    public async Task GetAll_ReturnsThreeSeededOrders()
     {
         // Arrange
         var repository = new FakeOrderRepository();
         var service = new OrderService(repository);
 
         // Act
-        var orders = service.GetAll();
+        var orders = await service.GetAllAsync();
 
         // Assert
         Assert.Equal(3, orders.Count);
@@ -25,14 +25,14 @@ public class OrderServiceTests
     }
 
     [Fact]
-    public void GetById_WithExistingId_ReturnsMatchingOrder()
+    public async Task GetById_WithExistingId_ReturnsMatchingOrder()
     {
         // Arrange
         var repository = new FakeOrderRepository();
         var service = new OrderService(repository);
 
         // Act
-        var order = service.GetById(1);
+        var order = await service.GetByIdAsync(1);
 
         // Assert
         Assert.NotNull(order);
@@ -42,21 +42,21 @@ public class OrderServiceTests
     }
 
     [Fact]
-    public void GetById_WithUnknownId_ReturnsNull()
+    public async Task GetById_WithUnknownId_ReturnsNull()
     {
         // Arrange
         var repository = new FakeOrderRepository();
         var service = new OrderService(repository);
 
         // Act
-        var order = service.GetById(999);
+        var order = await service.GetByIdAsync(999);
 
         // Assert
         Assert.Null(order);
     }
 
     [Fact]
-    public void Create_WithValidRequest_ReturnsNewOrder()
+    public async Task Create_WithValidRequest_ReturnsNewOrder()
     {
         // Arrange
         var repository = new FakeOrderRepository();
@@ -64,21 +64,22 @@ public class OrderServiceTests
         var request = new CreateOrderRequest("  Contoso  ", 199.99m);
 
         // Act
-        var order = service.Create(request, out var error);
+        var result = await service.CreateAsync(request);
 
         // Assert
-        Assert.NotNull(order);
-        Assert.Null(error);
-        Assert.Equal(4, order.Id);
-        Assert.Equal("Contoso", order.CustomerName);
-        Assert.Equal("Pending", order.Status);
-        Assert.Equal(199.99m, order.Total);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Order);
+        Assert.Null(result.Error);
+        Assert.Equal(4, result.Order.Id);
+        Assert.Equal("Contoso", result.Order.CustomerName);
+        Assert.Equal("Pending", result.Order.Status);
+        Assert.Equal(199.99m, result.Order.Total);
     }
 
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public void Create_WithBlankCustomerName_RejectsRequest(
+    public async Task Create_WithBlankCustomerName_RejectsRequest(
         string customerName)
     {
         // Arrange
@@ -87,16 +88,19 @@ public class OrderServiceTests
         var request = new CreateOrderRequest(customerName, 100m);
 
         // Act
-        var order = service.Create(request, out var error);
+        var result = await service.CreateAsync(request);
 
         // Assert
-        Assert.Null(order);
-        Assert.Equal("Customer name is required.", error);
-        Assert.Equal(3, service.GetAll().Count);
+        Assert.False(result.IsSuccess);
+        Assert.Null(result.Order);
+        Assert.Equal("Customer name is required.", result.Error);
+
+        var orders = await service.GetAllAsync();
+        Assert.Equal(3, orders.Count);
     }
 
     [Fact]
-    public void Create_WithNegativeTotal_RejectsRequest()
+    public async Task Create_WithNegativeTotal_RejectsRequest()
     {
         // Arrange
         var repository = new FakeOrderRepository();
@@ -104,16 +108,19 @@ public class OrderServiceTests
         var request = new CreateOrderRequest("Contoso", -1m);
 
         // Act
-        var order = service.Create(request, out var error);
+        var result = await service.CreateAsync(request);
 
         // Assert
-        Assert.Null(order);
-        Assert.Equal("Order total cannot be negative.", error);
-        Assert.Equal(3, service.GetAll().Count);
+        Assert.False(result.IsSuccess);
+        Assert.Null(result.Order);
+        Assert.Equal("Order total cannot be negative.", result.Error);
+
+        var orders = await service.GetAllAsync();
+        Assert.Equal(3, orders.Count);
     }
 
     [Fact]
-    public void Create_WithBlankCustomerName_DoesNotCallRepository()
+    public async Task Create_WithBlankCustomerName_DoesNotCallRepository()
     {
         // Arrange
         var repository = new FakeOrderRepository();
@@ -121,16 +128,16 @@ public class OrderServiceTests
         var request = new CreateOrderRequest(" ", 100m);
 
         // Act
-        var order = service.Create(request, out var error);
+        var result = await service.CreateAsync(request);
 
         // Assert
-        Assert.Null(order);
-        Assert.Equal("Customer name is required.", error);
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Customer name is required.", result.Error);
         Assert.Equal(0, repository.AddCallCount);
     }
 
     [Fact]
-    public void Create_WithNegativeTotal_DoesNotCallRepository()
+    public async Task Create_WithNegativeTotal_DoesNotCallRepository()
     {
         // Arrange
         var repository = new FakeOrderRepository();
@@ -138,16 +145,16 @@ public class OrderServiceTests
         var request = new CreateOrderRequest("Contoso", -1m);
 
         // Act
-        var order = service.Create(request, out var error);
+        var result = await service.CreateAsync(request);
 
         // Assert
-        Assert.Null(order);
-        Assert.Equal("Order total cannot be negative.", error);
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Order total cannot be negative.", result.Error);
         Assert.Equal(0, repository.AddCallCount);
     }
 
     [Fact]
-    public void Create_WithValidRequest_PassesTrimmedValuesToRepository()
+    public async Task Create_WithValidRequest_PassesTrimmedValuesToRepository()
     {
         // Arrange
         var repository = new FakeOrderRepository();
@@ -155,11 +162,12 @@ public class OrderServiceTests
         var request = new CreateOrderRequest("  Contoso  ", 199.99m);
 
         // Act
-        var order = service.Create(request, out var error);
+        var result = await service.CreateAsync(request);
 
         // Assert
-        Assert.NotNull(order);
-        Assert.Null(error);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Order);
+        Assert.Null(result.Error);
         Assert.Equal(1, repository.AddCallCount);
         Assert.Equal("Contoso", repository.LastCustomerName);
         Assert.Equal(199.99m, repository.LastTotal);

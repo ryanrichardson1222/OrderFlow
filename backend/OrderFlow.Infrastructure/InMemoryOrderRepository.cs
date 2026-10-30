@@ -6,23 +6,39 @@ public class InMemoryOrderRepository : IOrderRepository
 {
     private readonly List<Order> _orders =
     [
-        new Order(1, "Acme Corporation", "Processing", 249.99m),
-        new Order(2, "Northstar Logistics", "Shipped", 1249.50m),
-        new Order(3, "Summit Healthcare", "Pending", 89.95m)
+    new Order(1, "Acme Corporation", "Processing", 249.99m),
+new Order(2, "Northstar Logistics", "Shipped", 1249.50m),
+new Order(3, "Summit Healthcare", "Pending", 89.95m)
     ];
 
-    public IReadOnlyList<Order> GetAll()
+    public Task<IReadOnlyList<Order>> GetAllAsync(
+        CancellationToken cancellationToken = default)
     {
-        return _orders.AsReadOnly();
+        cancellationToken.ThrowIfCancellationRequested();
+
+        IReadOnlyList<Order> orders = _orders.AsReadOnly();
+
+        return Task.FromResult(orders);
     }
 
-    public Order? GetById(int id)
+    public Task<Order?> GetByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default)
     {
-        return _orders.FirstOrDefault(order => order.Id == id);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var order = _orders.FirstOrDefault(order => order.Id == id);
+
+        return Task.FromResult(order);
     }
 
-    public Order Add(string customerName, decimal total)
+    public Task<Order> AddAsync(
+        string customerName,
+        decimal total,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var nextId = _orders.Max(order => order.Id) + 1;
 
         var order = new Order(
@@ -33,6 +49,7 @@ public class InMemoryOrderRepository : IOrderRepository
 
         _orders.Add(order);
 
-        return order;
+        return Task.FromResult(order);
     }
+
 }

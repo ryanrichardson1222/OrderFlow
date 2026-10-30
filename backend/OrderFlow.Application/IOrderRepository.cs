@@ -2,9 +2,15 @@ namespace OrderFlow.Application;
 
 public interface IOrderRepository
 {
-    IReadOnlyList<Order> GetAll();
+    Task<IReadOnlyList<Order>> GetAllAsync(
+        CancellationToken cancellationToken = default);
 
-    Order? GetById(int id);
+    Task<Order?> GetByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default);
 
-    Order Add(string customerName, decimal total);
+    Task<Order> AddAsync(
+        string customerName,
+        decimal total,
+        CancellationToken cancellationToken = default);
 }

@@ -1,4 +1,3 @@
-
 using OrderFlow.Application;
 using OrderFlow.Infrastructure;
 
@@ -17,28 +16,44 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapGet("/api/orders", (OrderService service) =>
+app.MapGet("/api/orders", async (
+    OrderService service,
+    CancellationToken cancellationToken) =>
 {
-    return Results.Ok(service.GetAll());
+    var orders = await service.GetAllAsync(cancellationToken);
+
+    return Results.Ok(orders);
 })
 .WithName("GetOrders");
 
-app.MapPost("/api/orders", (CreateOrderRequest request, OrderService service) =>
+app.MapPost("/api/orders", async (
+    CreateOrderRequest request,
+    OrderService service,
+    CancellationToken cancellationToken) =>
 {
-    var order = service.Create(request, out var error);
+    var result = await service.CreateAsync(
+        request,
+        cancellationToken);
 
-    if (order is null)
+    if (!result.IsSuccess)
     {
-        return Results.BadRequest(new { error });
+        return Results.BadRequest(new { error = result.Error });
     }
 
-    return Results.Created($"/api/orders/{order.Id}", order);
+    return Results.Created(
+        $"/api/orders/{result.Order!.Id}",
+        result.Order);
 })
 .WithName("CreateOrder");
 
-app.MapGet("/api/orders/{id:int}", (int id, OrderService service) =>
+app.MapGet("/api/orders/{id:int}", async (
+    int id,
+    OrderService service,
+    CancellationToken cancellationToken) =>
 {
-    var order = service.GetById(id);
+    var order = await service.GetByIdAsync(
+        id,
+        cancellationToken);
 
     if (order is null)
     {

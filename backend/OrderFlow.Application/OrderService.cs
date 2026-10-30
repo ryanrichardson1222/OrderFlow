@@ -9,35 +9,42 @@ public class OrderService
         _repository = repository;
     }
 
-    public IReadOnlyList<Order> GetAll()
+    public Task<IReadOnlyList<Order>> GetAllAsync(
+        CancellationToken cancellationToken = default)
     {
-        return _repository.GetAll();
+        return _repository.GetAllAsync(cancellationToken);
     }
 
-    public Order? GetById(int id)
+    public Task<Order?> GetByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default)
     {
-        return _repository.GetById(id);
+        return _repository.GetByIdAsync(id, cancellationToken);
     }
 
-    public Order? Create(CreateOrderRequest request, out string? error)
+    public async Task<CreateOrderResult> CreateAsync(
+        CreateOrderRequest request,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.CustomerName))
         {
-            error = "Customer name is required.";
-            return null;
+            return new CreateOrderResult(
+                null,
+                "Customer name is required.");
         }
 
         if (request.Total < 0)
         {
-            error = "Order total cannot be negative.";
-            return null;
+            return new CreateOrderResult(
+                null,
+                "Order total cannot be negative.");
         }
 
-        var order = _repository.Add(
+        var order = await _repository.AddAsync(
             request.CustomerName.Trim(),
-            request.Total);
+            request.Total,
+            cancellationToken);
 
-        error = null;
-        return order;
+        return new CreateOrderResult(order, null);
     }
 }
