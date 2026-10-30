@@ -25,3 +25,7 @@ secrets.json
 .vs/
 .DS_Store
 Thumbs.db
+
+# SQL Server backups
+*.bak
+*.trn
