@@ -1,11 +1,12 @@
 /*
     OrderFlow - Database Verification
-    Target database: FullStackLearning
+    Database name is supplied at execution time.
+    Use an isolated database for validation and testing.
 
     Checks database status, tables, constraints, seed data, and view output.
 */
 
-USE [FullStackLearning];
+USE [$(DatabaseName)];
 GO
 
 /* 1. Database status */
@@ -14,7 +15,7 @@ SELECT
     state_desc,
     recovery_model_desc
 FROM sys.databases
-WHERE name = N'FullStackLearning';
+WHERE name = N'$(DatabaseName)';
 GO
 
 /* 2. Tables */

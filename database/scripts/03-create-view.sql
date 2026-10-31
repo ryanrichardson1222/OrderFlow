@@ -1,11 +1,12 @@
 /*
     OrderFlow - User Orders View
-    Target database: FullStackLearning
+    Database name is supplied at execution time.
+    Use an isolated database for validation and testing.
 
     Provides order details alongside associated user information.
 */
 
-USE [FullStackLearning];
+USE [$(DatabaseName)];
 GO
 
 CREATE OR ALTER VIEW dbo.vw_UserOrders

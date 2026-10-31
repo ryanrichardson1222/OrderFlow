@@ -1,12 +1,13 @@
 /*
     OrderFlow - Synthetic Seed Data
-    Target database: FullStackLearning
+    Database name is supplied at execution time.
+    Use an isolated database for validation and testing.
 
     Inserts three sample users and four sample orders.
     Safe to rerun without duplicating these sample records.
 */
 
-USE [FullStackLearning];
+USE [$(DatabaseName)];
 GO
 
 SET XACT_ABORT ON;

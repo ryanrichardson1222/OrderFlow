@@ -1,18 +1,23 @@
 /*
     OrderFlow - Database Schema
-    Target database: FullStackLearning
-    SQL Server 2022
+    Database name is supplied at execution time.
+    Use an isolated database for validation and testing.
 
     Creates the database and core Users / Orders tables.
 */
 
-IF DB_ID(N'FullStackLearning') IS NULL
+IF DB_ID(N'$(DatabaseName)') IS NULL
 BEGIN
-    CREATE DATABASE [FullStackLearning];
+    DECLARE @CreateDatabaseSql NVARCHAR(MAX);
+
+    SET @CreateDatabaseSql =
+        N'CREATE DATABASE ' + QUOTENAME(N'$(DatabaseName)');
+
+    EXEC sys.sp_executesql @CreateDatabaseSql;
 END;
 GO
 
-USE [FullStackLearning];
+USE [$(DatabaseName)];
 GO
 
 /* Users */
