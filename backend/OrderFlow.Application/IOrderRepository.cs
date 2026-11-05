@@ -9,8 +9,12 @@ public interface IOrderRepository
         int id,
         CancellationToken cancellationToken = default);
 
+    Task<bool> UserExistsAsync(
+        int userId,
+        CancellationToken cancellationToken = default);
+
     Task<Order> AddAsync(
-        string customerName,
+        int userId,
         decimal total,
         CancellationToken cancellationToken = default);
 }

@@ -4,11 +4,19 @@ namespace OrderFlow.Infrastructure;
 
 public class InMemoryOrderRepository : IOrderRepository
 {
+    private readonly Dictionary<int, string> _users = new()
+    {
+        { 1, "Ryan Richardson" },
+        { 2, "Alex Morgan" },
+        { 3, "Jordan Blake" }
+    };
+
     private readonly List<Order> _orders =
     [
-    new Order(1, "Acme Corporation", "Processing", 249.99m),
-new Order(2, "Northstar Logistics", "Shipped", 1249.50m),
-new Order(3, "Summit Healthcare", "Pending", 89.95m)
+        new Order(1, 1, "Ryan Richardson", "Processing", 249.99m),
+        new Order(2, 1, "Ryan Richardson", "Pending", 89.95m),
+        new Order(3, 2, "Alex Morgan", "Shipped", 1249.50m),
+        new Order(4, 3, "Jordan Blake", "Pending", 499.00m)
     ];
 
     public Task<IReadOnlyList<Order>> GetAllAsync(
@@ -17,7 +25,6 @@ new Order(3, "Summit Healthcare", "Pending", 89.95m)
         cancellationToken.ThrowIfCancellationRequested();
 
         IReadOnlyList<Order> orders = _orders.AsReadOnly();
-
         return Task.FromResult(orders);
     }
 
@@ -32,17 +39,33 @@ new Order(3, "Summit Healthcare", "Pending", 89.95m)
         return Task.FromResult(order);
     }
 
+    public Task<bool> UserExistsAsync(
+        int userId,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return Task.FromResult(_users.ContainsKey(userId));
+    }
+
     public Task<Order> AddAsync(
-        string customerName,
+        int userId,
         decimal total,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        if (!_users.TryGetValue(userId, out var customerName))
+        {
+            throw new InvalidOperationException(
+                $"User {userId} does not exist.");
+        }
+
         var nextId = _orders.Max(order => order.Id) + 1;
 
         var order = new Order(
             nextId,
+            userId,
             customerName,
             "Pending",
             total);
@@ -51,5 +74,4 @@ new Order(3, "Summit Healthcare", "Pending", 89.95m)
 
         return Task.FromResult(order);
     }
-
 }

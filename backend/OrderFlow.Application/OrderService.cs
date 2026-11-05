@@ -26,11 +26,11 @@ public class OrderService
         CreateOrderRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.CustomerName))
+        if (request.UserId <= 0)
         {
             return new CreateOrderResult(
                 null,
-                "Customer name is required.");
+                "A valid user ID is required.");
         }
 
         if (request.Total < 0)
@@ -40,8 +40,19 @@ public class OrderService
                 "Order total cannot be negative.");
         }
 
+        var userExists = await _repository.UserExistsAsync(
+            request.UserId,
+            cancellationToken);
+
+        if (!userExists)
+        {
+            return new CreateOrderResult(
+                null,
+                "The specified user does not exist.");
+        }
+
         var order = await _repository.AddAsync(
-            request.CustomerName.Trim(),
+            request.UserId,
             request.Total,
             cancellationToken);
 

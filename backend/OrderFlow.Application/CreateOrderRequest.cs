@@ -1,6 +1,5 @@
-
 namespace OrderFlow.Application;
 
 public record CreateOrderRequest(
-    string CustomerName,
+    int UserId,
     decimal Total);

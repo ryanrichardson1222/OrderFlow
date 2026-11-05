@@ -1,5 +1,4 @@
-﻿
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Hosting;
@@ -21,7 +20,7 @@ public class OrderApiTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task GetOrders_ReturnsOkAndThreeSeededOrders()
+    public async Task GetOrders_ReturnsOkAndFourSeededOrders()
     {
         var response = await _client.GetAsync("/api/orders");
 
@@ -31,29 +30,28 @@ public class OrderApiTests : IClassFixture<WebApplicationFactory<Program>>
             .ReadFromJsonAsync<List<OrderResponse>>();
 
         Assert.NotNull(orders);
-        Assert.Equal(3, orders.Count);
+        Assert.Equal(4, orders.Count);
 
         Assert.Contains(orders, order =>
             order.Id == 1 &&
-            order.CustomerName == "Acme Corporation");
-
-        Assert.Contains(orders, order =>
-            order.Id == 2 &&
-            order.CustomerName == "Northstar Logistics");
+            order.UserId == 1 &&
+            order.CustomerName == "Ryan Richardson");
 
         Assert.Contains(orders, order =>
             order.Id == 3 &&
-            order.CustomerName == "Summit Healthcare");
+            order.UserId == 2 &&
+            order.CustomerName == "Alex Morgan");
+
+        Assert.Contains(orders, order =>
+            order.Id == 4 &&
+            order.UserId == 3 &&
+            order.CustomerName == "Jordan Blake");
     }
 
-    [Theory]
-    [InlineData("", "Customer name is required.")]
-    [InlineData("   ", "Customer name is required.")]
-    public async Task CreateOrder_WithBlankCustomerName_ReturnsBadRequest(
-        string customerName,
-        string expectedError)
+    [Fact]
+    public async Task CreateOrder_WithInvalidUserId_ReturnsBadRequest()
     {
-        var request = new CreateOrderRequest(customerName, 100m);
+        var request = new CreateOrderRequest(0, 100m);
 
         var response = await _client.PostAsJsonAsync(
             "/api/orders",
@@ -65,13 +63,31 @@ public class OrderApiTests : IClassFixture<WebApplicationFactory<Program>>
             .ReadFromJsonAsync<ErrorResponse>();
 
         Assert.NotNull(body);
-        Assert.Equal(expectedError, body.Error);
+        Assert.Equal("A valid user ID is required.", body.Error);
+    }
+
+    [Fact]
+    public async Task CreateOrder_WithNonexistentUser_ReturnsBadRequest()
+    {
+        var request = new CreateOrderRequest(999, 100m);
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/orders",
+            request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var body = await response.Content
+            .ReadFromJsonAsync<ErrorResponse>();
+
+        Assert.NotNull(body);
+        Assert.Equal("The specified user does not exist.", body.Error);
     }
 
     [Fact]
     public async Task CreateOrder_WithNegativeTotal_ReturnsBadRequest()
     {
-        var request = new CreateOrderRequest("Contoso", -1m);
+        var request = new CreateOrderRequest(1, -1m);
 
         var response = await _client.PostAsJsonAsync(
             "/api/orders",
@@ -89,29 +105,33 @@ public class OrderApiTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task CreateOrder_WithValidRequest_ReturnsCreatedOrder()
     {
-        var request = new CreateOrderRequest("  Contoso  ", 199.99m);
+        var request = new CreateOrderRequest(1, 199.99m);
 
         var response = await _client.PostAsJsonAsync(
             "/api/orders",
             request);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        Assert.EndsWith("/api/orders/4", response.Headers.Location!.ToString());
+        Assert.EndsWith(
+            "/api/orders/5",
+            response.Headers.Location!.ToString());
 
         var order = await response.Content
             .ReadFromJsonAsync<OrderResponse>();
 
         Assert.NotNull(order);
-        Assert.Equal(4, order.Id);
-        Assert.Equal("Contoso", order.CustomerName);
+        Assert.Equal(5, order.Id);
+        Assert.Equal(1, order.UserId);
+        Assert.Equal("Ryan Richardson", order.CustomerName);
         Assert.Equal("Pending", order.Status);
         Assert.Equal(199.99m, order.Total);
     }
 
-    private record CreateOrderRequest(string CustomerName, decimal Total);
+    private record CreateOrderRequest(int UserId, decimal Total);
 
     private record OrderResponse(
         int Id,
+        int UserId,
         string CustomerName,
         string Status,
         decimal Total);
