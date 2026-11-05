@@ -22,5 +22,6 @@ AS
         o.Total
     FROM dbo.Orders AS o
     INNER JOIN dbo.Users AS u
-        ON o.UserId = u.UserId;
+        ON o.UserId = u.UserId
+    WHERE o.IsDeleted = 0;
 GO

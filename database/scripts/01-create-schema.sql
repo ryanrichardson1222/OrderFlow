@@ -50,6 +50,9 @@ BEGIN
         Status NVARCHAR(30) NOT NULL
             CONSTRAINT DF_Orders_Status DEFAULT N'Pending',
         Total DECIMAL(18,2) NOT NULL,
+        IsDeleted BIT NOT NULL
+            CONSTRAINT DF_Orders_IsDeleted DEFAULT (0),
+        DeletedAt DATETIME2(0) NULL,
 
         CONSTRAINT PK_Orders PRIMARY KEY (OrderId),
         CONSTRAINT FK_Orders_Users
