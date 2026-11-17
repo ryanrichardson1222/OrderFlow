@@ -186,15 +186,16 @@ BEGIN
     END;
 
     SELECT
-        OrderId,
-        UserId,
-        OrderDate,
-        Status,
-        Total,
-        IsDeleted,
-        DeletedAt
-    FROM dbo.Orders
-    WHERE OrderId = @OrderId;
+        o.OrderId,
+        o.UserId,
+        u.FirstName,
+        u.LastName,
+        o.Status,
+        o.Total
+    FROM dbo.Orders AS o
+    INNER JOIN dbo.Users AS u
+        ON o.UserId = u.UserId
+    WHERE o.OrderId = @OrderId;
 END;
 GO
 
@@ -227,15 +228,16 @@ BEGIN
     END;
 
     SELECT
-        OrderId,
-        UserId,
-        OrderDate,
-        Status,
-        Total,
-        IsDeleted,
-        DeletedAt
-    FROM dbo.Orders
-    WHERE OrderId = @OrderId;
+        o.OrderId,
+        o.UserId,
+        u.FirstName,
+        u.LastName,
+        o.Status,
+        o.Total
+    FROM dbo.Orders AS o
+    INNER JOIN dbo.Users AS u
+        ON o.UserId = u.UserId
+    WHERE o.OrderId = @OrderId;
 END;
 GO
 

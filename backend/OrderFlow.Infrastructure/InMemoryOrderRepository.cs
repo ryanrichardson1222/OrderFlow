@@ -19,12 +19,29 @@ public class InMemoryOrderRepository : IOrderRepository
         new Order(4, 3, "Jordan Blake", "Pending", 499.00m)
     ];
 
+    private readonly HashSet<int> _deletedOrderIds = [];
+
+    private readonly Dictionary<int, DateTime> _orderDates;
+
+    private readonly Dictionary<int, DateTime> _deletedAt = new();
+
+    public InMemoryOrderRepository()
+    {
+        _orderDates = _orders.ToDictionary(
+            order => order.Id,
+            _ => DateTime.UtcNow);
+    }
+
     public Task<IReadOnlyList<Order>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        IReadOnlyList<Order> orders = _orders.AsReadOnly();
+        IReadOnlyList<Order> orders = _orders
+            .Where(order => !_deletedOrderIds.Contains(order.Id))
+            .ToList()
+            .AsReadOnly();
+
         return Task.FromResult(orders);
     }
 
@@ -34,9 +51,117 @@ public class InMemoryOrderRepository : IOrderRepository
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var order = _orders.FirstOrDefault(order => order.Id == id);
+        var order = _orders.FirstOrDefault(
+            order => order.Id == id && !_deletedOrderIds.Contains(order.Id));
 
         return Task.FromResult(order);
+    }
+
+    public Task<OrderMutationResult> DeleteAsync(
+        int id,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var order = _orders.FirstOrDefault(order => order.Id == id);
+
+        if (order is null)
+        {
+            return Task.FromResult(new OrderMutationResult(
+                null,
+                OrderMutationErrorCode.OrderNotFound));
+        }
+
+        if (_deletedOrderIds.Contains(id))
+        {
+            return Task.FromResult(new OrderMutationResult(
+                null,
+                OrderMutationErrorCode.AlreadyDeleted));
+        }
+
+        _deletedOrderIds.Add(id);
+        _deletedAt[id] = DateTime.UtcNow;
+
+        return Task.FromResult(new OrderMutationResult(order, null));
+    }
+
+    public Task<OrderMutationResult> RestoreAsync(
+        int id,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var order = _orders.FirstOrDefault(order => order.Id == id);
+
+        if (order is null)
+        {
+            return Task.FromResult(new OrderMutationResult(
+                null,
+                OrderMutationErrorCode.OrderNotFound));
+        }
+
+        if (!_deletedOrderIds.Contains(id))
+        {
+            return Task.FromResult(new OrderMutationResult(
+                null,
+                OrderMutationErrorCode.NotDeleted));
+        }
+
+        _deletedOrderIds.Remove(id);
+        _deletedAt.Remove(id);
+
+        return Task.FromResult(new OrderMutationResult(order, null));
+    }
+
+    public Task<IReadOnlyList<OrderWithDeletionStatus>> GetAllIncludingDeletedAsync(
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        IReadOnlyList<OrderWithDeletionStatus> orders = _orders
+            .Select(order => new OrderWithDeletionStatus(
+                order,
+                _orderDates[order.Id],
+                _deletedOrderIds.Contains(order.Id),
+                _deletedAt.TryGetValue(order.Id, out var deletedAt)
+                    ? deletedAt
+                    : (DateTime?)null))
+            .ToList();
+
+        return Task.FromResult(orders);
+    }
+
+    public Task<OrderMutationResult> UpdateStatusAsync(
+        int id,
+        string status,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var index = _orders.FindIndex(order => order.Id == id);
+
+        if (index < 0)
+        {
+            return Task.FromResult(new OrderMutationResult(
+                null,
+                OrderMutationErrorCode.OrderNotFound));
+        }
+
+        if (_deletedOrderIds.Contains(id))
+        {
+            return Task.FromResult(new OrderMutationResult(
+                null,
+                OrderMutationErrorCode.OrderDeleted));
+        }
+
+        var updatedOrder = _orders[index] with
+        {
+            Status = status
+        };
+
+        _orders[index] = updatedOrder;
+
+        return Task.FromResult(new OrderMutationResult(updatedOrder, null));
     }
 
     public Task<bool> UserExistsAsync(
@@ -71,7 +196,7 @@ public class InMemoryOrderRepository : IOrderRepository
             total);
 
         _orders.Add(order);
-
+        _orderDates[order.Id] = DateTime.UtcNow;
         return Task.FromResult(order);
     }
 }

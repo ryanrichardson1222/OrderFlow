@@ -4,6 +4,7 @@
     <Project Path="backend/OrderFlow.Api/OrderFlow.Api.csproj" />
     <Project Path="backend/OrderFlow.Application.Tests/OrderFlow.Application.Tests.csproj" />
     <Project Path="backend/OrderFlow.Application/OrderFlow.Application.csproj" />
+    <Project Path="backend/OrderFlow.Infrastructure.Tests/OrderFlow.Infrastructure.Tests.csproj" />
     <Project Path="backend/OrderFlow.Infrastructure/OrderFlow.Infrastructure.csproj" />
   </Folder>
 </Solution>
